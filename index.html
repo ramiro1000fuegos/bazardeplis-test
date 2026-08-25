@@ -336,8 +336,9 @@
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
       .replace(/♥/g, '<span style="color:var(--rv-red)">♥</span>')
       .replace(/♦/g, '<span style="color:var(--rv-red)">♦</span>');
-  
-    return '<div style="width:100%;">' + clean + '</div>';
+
+    clean = '<div>' + clean.replace(/<br\s*\/?>/gi, '</div><div>') + '</div>';
+    return clean;
   }
 
   // ---- State ------------------------------------------------------------
