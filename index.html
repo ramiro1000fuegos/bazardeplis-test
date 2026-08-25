@@ -175,8 +175,12 @@
   .rv-card.rv-visible{display:flex;}
   
   .rv-mission-bloc{
-    display:flex; flex-direction:column; align-items:center;
-    width:100%; gap:25px; min-height:0; flex:1;
+      display:flex; flex-direction:column; align-items:center;
+      width:100%; gap:12px; min-height:0; flex:1;
+      border:1px solid color-mix(in srgb, var(--mission-color, var(--spot)) 45%, transparent);
+      background:color-mix(in srgb, var(--mission-color, var(--spot)) 8%, var(--bg));
+      border-radius:16px;
+      padding:16px;
   }
   .rv-mission-categorie{
     font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);
@@ -631,12 +635,11 @@
     try { localStorage.setItem(STORAGE_MISSIONS_ECARTEES, JSON.stringify(Array.from(missionsEcartees))); } catch(e){}
   }
 
-  function appliquerCouleurMission(couleur){
-    var c = (couleur || "").trim();
-    var couleurFinale = /^#[0-9A-Fa-f]{6}$/.test(c) ? c : "var(--spot)";
-    $("card-titre").style.color = couleurFinale;
-    // $("card-cartes").style.background = couleurFinale;
-    // $("btn-next-manche").style.background = couleurFinale;
+  function appliquerCouleurMission(couleur, suffix, blocId){
+      var c = (couleur || "").trim();
+      var couleurFinale = /^#[0-9A-Fa-f]{6}$/.test(c) ? c : "var(--spot)";
+      $("card-titre" + suffix).style.color = couleurFinale;
+      $(blocId).style.setProperty("--mission-color", couleurFinale);
   }
   
   function choisirNombreCartes(mission1, mission2){
@@ -676,7 +679,8 @@
   function remplirFace(suffix, mission){
     $("card-titre" + suffix).textContent = mission.titre;
     $("card-texte" + suffix).innerHTML = sanitizeCardText(mission.texte);
-    appliquerCouleurMission(mission.couleur, suffix);
+    var blocId = suffix === "" ? "mission-bloc-1" : "mission-bloc-2";
+    appliquerCouleurMission(mission.couleur, suffix, blocId);
   }
   
   function afficherMission(mission1, mission2){
