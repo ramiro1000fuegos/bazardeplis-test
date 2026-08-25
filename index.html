@@ -705,14 +705,13 @@
   function ajusterUnBloc(suffix, hDispo, titreMax, titreMin, texteMax, texteMin){
     var titreEl = $("card-titre" + suffix);
     var texteEl = $("card-texte" + suffix);
-    var titreH = Math.round(hDispo * 0.3);
-    var texteH = hDispo - titreH;
-    titreEl.style.height = titreH + "px";
-    texteEl.style.height = texteH + "px";
+    titreEl.style.height = "";
     ajusterTailleUnique(titreEl, titreMax, titreMin);
+    var texteH = Math.max(hDispo - titreEl.offsetHeight - 12, 20);
+    texteEl.style.height = texteH + "px";
     ajusterTailleUnique(texteEl, texteMax, texteMin);
   }
-  
+    
   function ajusterBlocsMissions(){
     var card = $("stage-card");
     var cartesEl = $("card-cartes");
