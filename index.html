@@ -168,15 +168,15 @@
   }
   
   .rv-card{
-    display:none; flex-direction:column; align-items:center;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
     width:100%; max-width:560px; height:100%;
-    gap:25px;
+    gap:14px;
   }
   .rv-card.rv-visible{display:flex;}
   
   .rv-mission-bloc{
       display:flex; flex-direction:column; align-items:center;
-      width:100%; gap:12px; min-height:0; flex:1;
+      width:100%; gap:12px;
       border:1px solid color-mix(in srgb, var(--mission-color, var(--spot)) 45%, transparent);
       background:color-mix(in srgb, var(--mission-color, var(--spot)) 8%, var(--bg));
       border-radius:16px;
@@ -192,9 +192,8 @@
     line-height:1.18; width:100%; overflow:hidden; flex-shrink:0;
   }
   .rv-mission-texte{
-    font-family:var(--font-ui); font-weight:500; text-align:center; line-height:1.42;
-    width:100%; flex:1; min-height:0; overflow:hidden;
-    display:flex; align-items:flex-start; justify-content:center;
+      font-family:var(--font-ui); font-weight:500; text-align:center; line-height:1.42;
+      width:100%; overflow:hidden;
   }
   .rv-mission-texte b, .rv-mission-texte strong{font-weight:800;}
   .rv-mission-cartes{
@@ -717,31 +716,55 @@
   }
     
   function ajusterBlocsMissions(){
-    var card = $("stage-card");
-    var cartesEl = $("card-cartes");
-    var bloc2Visible = !$("mission-bloc-2").hidden;
+      var card = $("stage-card");
+      var cartesEl = $("card-cartes");
+      var bloc2Visible = !$("mission-bloc-2").hidden;
   
-    var totalH = card.clientHeight;
-    var reserve = cartesEl.offsetHeight + 14; // gap sous la pastille
-    var dispoH = Math.max(totalH - reserve, 80);
+      var totalH = card.clientHeight;
+      var reserve = cartesEl.offsetHeight + 14; // gap sous la pastille
+      var dispoH = Math.max(totalH - reserve, 80);
   
-    var gapEntreBlocs = bloc2Visible ? 14 : 0;
-    var hParBloc = bloc2Visible ? (dispoH - gapEntreBlocs) / 2 : dispoH;
+      var titreMax = bloc2Visible ? 26 : 36;
+      var texteMax = bloc2Visible ? 20 : 30;
+      var titreMin = 12;
+      var texteMin = 11;
   
-    var titreMax = bloc2Visible ? 26 : 36;
-    var texteMax = bloc2Visible ? 20 : 30;
+      var suffixes = bloc2Visible ? ["", "-2"] : [""];
   
-    var res1 = ajusterUnBloc("", hParBloc, titreMax, 12, texteMax, 11);
-    if (bloc2Visible){
-      var res2 = ajusterUnBloc("-2", hParBloc, titreMax, 12, texteMax, 11);
-      var titreCommun = Math.min(res1.titre, res2.titre);
-      var texteCommun = Math.min(res1.texte, res2.texte);
-      $("card-titre").style.fontSize = titreCommun + "px";
-      $("card-titre-2").style.fontSize = titreCommun + "px";
-      $("card-texte").style.fontSize = texteCommun + "px";
-      $("card-texte-2").style.fontSize = texteCommun + "px";
-    }
-  }  
+      // On repart toujours du plafond, sur les deux boîtes à la fois
+      suffixes.forEach(function(suffix){
+        $("card-titre" + suffix).style.fontSize = titreMax + "px";
+        $("card-texte" + suffix).style.fontSize = texteMax + "px";
+      });
+  
+      function hauteurTotale(){
+        var h = $("mission-bloc-1").offsetHeight;
+        if (bloc2Visible) h += 14 + $("mission-bloc-2").offsetHeight; // 14 = gap de .rv-card
+        return h;
+      }
+  
+      // Étape 1 : si ça déborde, on réduit les DEUX textes ensemble
+      var texteTaille = texteMax;
+      var garde = 0;
+      while (hauteurTotale() > dispoH && texteTaille > texteMin && garde < 60){
+        texteTaille -= 1;
+        suffixes.forEach(function(suffix){
+          $("card-texte" + suffix).style.fontSize = texteTaille + "px";
+        });
+        garde++;
+      }
+  
+      // Étape 2 : si ça déborde encore, on réduit les DEUX titres ensemble
+      var titreTaille = titreMax;
+      garde = 0;
+      while (hauteurTotale() > dispoH && titreTaille > titreMin && garde < 60){
+        titreTaille -= 1;
+        suffixes.forEach(function(suffix){
+          $("card-titre" + suffix).style.fontSize = titreTaille + "px";
+        });
+        garde++;
+      }
+  }
 
   window.addEventListener("resize", function(){
     if ($("stage-card").classList.contains("rv-visible")) ajusterBlocsMissions();
