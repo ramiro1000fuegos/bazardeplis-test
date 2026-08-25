@@ -331,11 +331,13 @@
   var PURIFY_CONFIG = { ALLOWED_TAGS: ["br","b","strong","span"], ALLOWED_ATTR: ["color"] };
   function sanitizeCardText(raw){
     var clean = DOMPurify.sanitize(raw || "", PURIFY_CONFIG);
-    return clean
+    clean = clean
       .replace(/<span color="rouge">/g, '<span style="color:var(--rv-red)">')
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
       .replace(/♥/g, '<span style="color:var(--rv-red)">♥</span>')
       .replace(/♦/g, '<span style="color:var(--rv-red)">♦</span>');
+  
+    return '<div style="width:100%;">' + clean + '</div>';
   }
 
   // ---- State ------------------------------------------------------------
