@@ -106,7 +106,7 @@
   }
   .rv-btn-text:hover{color:var(--text);}
   .rv-btn-reset{
-    background:transparent; border:1px solid var(--line); color:var(--text-muted);
+    background:transparent; border:1px solid var(--line); color:var(--text);
     border-radius:12px; padding:13px 20px; font-size:14px; font-weight:600; width:100%;
   }
   .rv-btn-reset:hover{ border-color:var(--danger); color:var(--rv-red); }
@@ -251,8 +251,8 @@
       <div class="rv-footer-actions">
         <a class="rv-btn-reset" id="btn-regles" href="https://docs.google.com/document/d/1kye2mTZ__FhK8NN0V3IhhFVqy8vcjaCx-MYYKIAw90Y/edit?usp=sharing&pli=1&authuser=0" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Voir les règles du jeu</a>
         <div class="rv-btn-row">
-          <button class="rv-btn rv-btn-primary" id="btn-players-play" disabled>Commencer la partie</button>
-          <button class="rv-btn rv-btn-ghost" id="btn-players-play-variante" disabled>Variante : 2 règles extra</button>
+          <button class="rv-btn rv-btn-primary" id="btn-players-play" disabled>Jouer (1 nouvelle règle par manche)</button>
+          <button class="rv-btn rv-btn-primary" id="btn-players-play-variante" disabled>Jouer (2 nouvelles règles par manche)</button>
         </div>
       </div>
     </div>
@@ -664,17 +664,6 @@
     $("btn-next-manche").style.background = "";
   }
 
-  function ajusterTailleUnique(el, tailleMax, tailleMin){
-    var taille = tailleMax;
-    el.style.fontSize = taille + "px";
-    var garde = 0;
-    while (el.scrollHeight > el.clientHeight && taille > tailleMin && garde < 60){
-      taille -= 0.5;
-      el.style.fontSize = taille + "px";
-      garde++;
-    }
-    return taille;    
-  }
   
   function remplirFace(suffix, mission){
     $("card-titre" + suffix).textContent = mission.titre;
@@ -706,14 +695,6 @@
     requestAnimationFrame(ajusterBlocsMissions);
   }
 
-  function ajusterUnBloc(suffix, hDispo, titreMax, titreMin, texteMax, texteMin){
-    var titreEl = $("card-titre" + suffix);
-    var texteEl = $("card-texte" + suffix);
-    titreEl.style.height = "";
-    var titreTaille = ajusterTailleUnique(titreEl, titreMax, titreMin);
-    var texteTaille = ajusterTailleUnique(texteEl, texteMax, texteMin);
-    return { titre: titreTaille, texte: texteTaille };
-  }
     
   function ajusterBlocsMissions(){
       var card = $("stage-card");
