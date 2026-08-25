@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Bazar de Plis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+  :root{
+    --bg: #15121B;
+    --bg-raised: #1E1A26;
+    --spot: #E8A33D;
+    --spot-dim: #7A5A26;
+    --text: #F4EEE3;
+    --text-muted: #948C9E;
+    --teal: #4E9E97;
+    --danger: #C1595A;
+    --line: #2C2733;
+    --font-display: "Fraunces", Georgia, serif;
+    --font-ui: "Inter", system-ui, sans-serif;
+    --rv-red: #E2707A;
+    --rv-green: #7FBE8E;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    overflow:hidden;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--spot);
+    outline-offset:3px;
+  }
+  input{font-family:inherit;}
+
+  .rv-stage-topbar{ display:none !important; }
+  .rv-mission-categorie{ display:none !important; }
+  
+  .rv-screen{
+    flex:1;
+    display:none;
+    flex-direction:column;
+    min-height:0;
+    padding:max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  }
+  .rv-screen.rv-active{display:flex;}
+
+  .rv-titre-image{
+    display:block;
+    max-width:100%;
+    max-height:22vh;
+    width:auto;
+    margin:10px auto 60px;
+    object-fit:contain;
+  }  
+  .rv-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding-bottom:14px;
+    flex-shrink:0;
+  }
+  .rv-topbar-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .rv-eyebrow{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); }
+  .rv-game-name{
+    font-family:var(--font-display); font-weight:600; font-size:18px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .rv-icon-btn{
+    background:var(--bg-raised); border:1px solid var(--line); color:var(--text-muted);
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:border-color .15s, color .15s;
+  }
+  .rv-icon-btn:hover{border-color:var(--spot-dim); color:var(--text);}
+  .rv-icon-btn svg{width:18px; height:18px;}
+
+  .rv-btn{
+    border:none; border-radius:12px; padding:15px 22px;
+    font-size:16px; font-weight:600; font-family:var(--font-ui);
+    height:clamp(72px, 10dvh, 100px);
+  }
+  .rv-btn-primary{ background:var(--spot); color:#1B140A; }
+  .rv-btn-primary:active{transform:scale(.98);}
+  .rv-btn-primary:disabled{opacity:.4;}
+  .rv-btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text); }
+  .rv-btn-ghost:hover{border-color:var(--spot-dim);}
+  .rv-btn-ghost:disabled{opacity:.35;}
+  .rv-btn-text{
+    background:none; border:none; color:var(--text-muted);
+    font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:6px;
+  }
+  .rv-btn-text:hover{color:var(--text);}
+  .rv-btn-reset{
+    background:transparent; border:1px solid var(--line); color:var(--text-muted);
+    border-radius:12px; padding:13px 20px; font-size:14px; font-weight:600; width:100%;
+  }
+  .rv-btn-reset:hover{ border-color:var(--danger); color:var(--rv-red); }
+
+  h1.rv-title{ font-family:var(--font-display); font-weight:700; font-size:clamp(26px, 7vw, 34px); margin:0 0 6px; }
+  p.rv-sub{ color:var(--text-muted); font-size:clamp(16px, 5vw, 18px); line-height:1.5; margin:0 0 22px; }
+
+  #screen-home{ align-items:center; justify-content:center; text-align:center; }
+
+  .rv-list-wrap{ flex:1; display:flex; flex-direction:column; min-height:0; }
+  .rv-scroll{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; }
+
+  .rv-chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .rv-chip{
+    border:1px solid var(--line); background:transparent; color:var(--text-muted);
+    border-radius:999px; padding:9px 15px; font-size:14px; font-weight:500;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .rv-chip[aria-pressed="true"]{ background:var(--teal); border-color:var(--teal); color:#0D2422; font-weight:600; }
+  .rv-util-row{ display:flex; gap:16px; margin-bottom:16px; }
+  .rv-footer-actions{ flex-shrink:0; padding-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .rv-count-note{ font-size:13px; color:var(--text-muted); text-align:center; }
+
+  /* ---------- players ---------- */
+  .rv-players-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:22px;
+  }
+  .rv-player-opt{
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:14px;
+    padding:18px 0; text-align:center; color:var(--text);
+    font-family:var(--font-display); font-weight:700; font-size:26px;
+  }
+  .rv-player-opt span{ display:block; font-family:var(--font-ui); font-weight:500; font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .rv-player-opt[aria-pressed="true"]{ background:var(--spot); border-color:var(--spot); color:#1B140A; }
+  .rv-player-opt[aria-pressed="true"] span{ color:#3A2A0E; }
+
+  /* ---------- stage ---------- */
+  #screen-stage{ padding:0; position:relative; }
+  .rv-stage-topbar{ padding:max(18px, env(safe-area-inset-top)) 18px 10px; flex-shrink:0; }
+
+  .rv-stage-content{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    min-height:0;
+    padding:14px 20px;
+  }
+  .rv-spotlight{
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 50% 42%, rgba(232,163,61,.16), transparent 60%);
+    opacity:0; transition:opacity .5s ease; pointer-events:none;
+  }
+  .rv-spotlight.rv-on{opacity:1;}
+
+  .rv-idle-hint{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    color:var(--text-muted); text-align:center;
+  }
+
+  .rv-card{
+    display:none; flex-direction:column; align-items:center;
+    width:100%; max-width:560px; height:100%;
+    gap:16px;
+  }
+  .rv-card.rv-visible{display:flex;}
+
+  .rv-mission-categorie{
+    font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);
+    background:rgba(78,158,151,.12); border:1px solid rgba(78,158,151,.35);
+    border-radius:999px; padding:5px 14px; flex-shrink:0;
+  }
+  .rv-mission-titre{
+    font-family:var(--font-display); font-weight:700; text-align:center; color:var(--spot);
+    line-height:1.18; width:100%; overflow:hidden; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rv-mission-texte{
+    font-family:var(--font-ui); font-weight:500; text-align:center; line-height:1.42;
+    width:100%; flex:1; min-height:0; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rv-mission-texte b, .rv-mission-texte strong{font-weight:800;}
+  .rv-mission-cartes{
+    font-family:var(--font-display); font-weight:700; font-size:17px;
+    color:#1B140A; background:var(--spot);
+    border-radius:999px; padding:10px 22px; flex-shrink:0;
+  }
+  .rv-cartes-nombre{
+    font-size:1.7em;
+    font-weight:800;
+    margin-right:4px;
+  }
+
+  .rv-empty-hint{ display:none; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+  .rv-empty-hint.rv-visible{display:flex;}
+
+  .rv-stage-actionbar{
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:14px 18px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  }
+  .rv-btn-row{ display:flex; gap:10px; width:100%; max-width:460px; }
+  .rv-btn-row .rv-btn{ flex:1; }
+  #btn-next-manche{ flex:1.4; }
+
+  /* ---------- settings ---------- */
+  .rv-inline-msg{ font-size:13px; border-radius:8px; padding:9px 12px; margin-top:10px; display:none; }
+  .rv-inline-msg.rv-visible{display:block;}
+  .rv-inline-msg.rv-ok{background:rgba(78,158,151,.12); color:var(--teal); border:1px solid rgba(78,158,151,.35);}
+  .rv-inline-msg.rv-err{background:rgba(193,89,90,.1); color:#E8A5A5; border:1px solid rgba(193,89,90,.4);}
+  .rv-inline-msg.rv-neutral{background:var(--bg-raised); color:var(--text-muted); border:1px solid var(--line);}
+
+  [hidden]{display:none !important;}
+
+  @media (prefers-reduced-motion: reduce){
+    .rv-spotlight{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+
+  <!-- ===================== PLAYERS SELECT ===================== -->
+  <section id="screen-players-select" class="rv-screen">
+    <div class="rv-list-wrap">
+      <img src="Bazar_Plis_Lite.png" alt="Bazar de Plis" class="rv-titre-image">
+      <!--<h1 class="rv-title" style="text-align:center;">Bazar de Plis</h1>-->
+      <p class="rv-sub" style="text-align:center;">Combien de joueurs ?</p>
+      <div class="rv-scroll">
+        <div class="rv-players-grid" id="players-grid"></div>
+      </div>
+      <div class="rv-footer-actions">
+        <a class="rv-btn-reset" id="btn-regles" href="https://docs.google.com/document/d/1kye2mTZ__FhK8NN0V3IhhFVqy8vcjaCx-MYYKIAw90Y/edit?usp=sharing&pli=1&authuser=0" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Voir les règles du jeu</a>
+        <button class="rv-btn rv-btn-primary" id="btn-players-play" disabled>Commencer la partie</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STAGE ===================== -->
+  <section id="screen-stage" class="rv-screen">
+    <div class="rv-stage-topbar rv-topbar">
+      <div class="rv-topbar-info">
+        <span class="rv-eyebrow">Manche</span>
+        <span class="rv-game-name" id="manche-number">—</span>
+      </div>
+    </div>
+
+    <div class="rv-stage-content">
+      <div class="rv-spotlight" id="spotlight" aria-hidden="true"></div>
+
+      <div class="rv-idle-hint" id="stage-idle">
+        <span>Appuie sur « Nouvelle manche » pour commencer</span>
+      </div>
+
+      <div class="rv-card" id="stage-card">
+        <span class="rv-mission-categorie" id="card-categorie"></span>
+        <div class="rv-mission-titre" id="card-titre"></div>
+        <span class="rv-mission-cartes" id="card-cartes"></span>
+        <div class="rv-mission-texte" id="card-texte"></div>
+      </div>
+
+      <div class="rv-empty-hint" id="stage-empty">
+        <span class="rv-sub" style="margin:0;">Plus aucune règlle extra disponible pour ce nombre de joueurs.</span>
+      </div>
+    </div>
+
+    <div class="rv-stage-actionbar">
+      <div class="rv-btn-row">
+        <button class="rv-btn rv-btn-ghost" id="btn-skip" disabled>Sauter cette règle</button>
+        <button class="rv-btn rv-btn-primary" id="btn-next-manche">Nouvelle manche</button>
+      </div>
+      <button class="rv-btn-reset" id="btn-new-game">Nouvelle partie</button>
+    </div>
+  </section>
+
+  <script data-goatcounter="https://bazardeplis.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  
+  <script>
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
+        console.warn('Service Worker non enregistré :', err);
+      });
+    }    
+  
+(function(){
+  "use strict";
+
+  // ---- Config ---------------------------------------------------------
+ 
+  var CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJwGVXOGrH4pRy0emVTaOQC7S5xVqt93KBRrij63FWayGgjv3WLZaVNTXpxVra6UbLQRqXqby_RrYd/pub?gid=0&single=true&output=csv"
+  var STORAGE_CSV_CACHE = "bazar.csv.cache";
+  var STORAGE_DERNIERE_OUVERTURE = "bazar.derniereOuverture";
+  var STORAGE_MISSIONS_ECARTEES = "bazar.missions.ecartees";  
+  
+  var STORAGE_SOUSCATS_UTILISEES = "bazar.souscategories.utilisees";
+  var STORAGE_MISSIONS_VUES = "bazar.missions.vues";
+
+  var PLAYER_COUNTS = [3,4,5,6,7,8];
+
+  var SAMPLE_ROWS = [
+    {souscategorie:"Chasse au trésor", titre:"Le plus petit atout", texte:"Annonce le nombre exact de tes petits atouts.<br>Tu marques si tu tombes juste.", categorie:"Pili", cartes_3:"2", cartes_4:"2/3", cartes_5:"3", cartes_6:"3", cartes_7:"4", cartes_8:"4", top_rattrapage:""},
+    {souscategorie:"Chasse au trésor", titre:"Carte fantôme", texte:"Choisis en secret une carte de ta main.<br>Elle ne doit jamais remporter un pli.", categorie:"New", cartes_3:"2", cartes_4:"2", cartes_5:"3", cartes_6:"3", cartes_7:"3", cartes_8:"4", top_rattrapage:"3"},
+    {souscategorie:"Duel", titre:"Face à face", texte:"Désigne un adversaire en début de manche.<br>Fais plus de plis que lui.", categorie:"Pili", cartes_3:"1", cartes_4:"2", cartes_5:"2", cartes_6:"2", cartes_7:"3", cartes_8:"3", top_rattrapage:""}
+  ];
+
+  // ---- DOMPurify config ---------------------------------------------------
+  DOMPurify.addHook("uponSanitizeAttribute", function(node, data){
+    if (data.attrName === "color"){
+      var v = (data.attrValue || "").toLowerCase().trim();
+      if (v !== "rouge" && v !== "vert"){ data.keepAttr = false; }
+    }
+  });
+  var PURIFY_CONFIG = { ALLOWED_TAGS: ["br","b","strong","span"], ALLOWED_ATTR: ["color"] };
+  function sanitizeCardText(raw){
+    var clean = DOMPurify.sanitize(raw || "", PURIFY_CONFIG);
+    return clean
+      .replace(/<span color="rouge">/g, '<span style="color:var(--rv-red)">')
+      .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">');
+  }
+
+  // ---- State ------------------------------------------------------------
+  var allRows = [];
+  var subcategories = [];
+  var categoriesVues = new Set();   // en mémoire seulement, jamais persisté, remis à zéro à chaque nouvelle partie
+  var missionsEcartees = new Set(); // persisté, vide pour l'instant — pas d'UI encore pour l'alimenter
+  var souscategoriesUtilisees = new Set(); // persisté, reset seulement à cycle complet
+  var missionsVues = {};                   // persisté, clé -> bool
+  var playerCount = null;
+  var manche = 0;
+  var dataReady = false;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var screens = ["players-select","stage"];
+  function showScreen(name){
+    screens.forEach(function(s){ $("screen-"+s).classList.toggle("rv-active", s === name); });
+  }
+
+  function normalizeKey(k){
+    return (k||"").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function uniqueBy(rows, field){
+    var map = {}, order = [];
+    rows.forEach(function(r){
+      var k = normalizeKey(r[field]);
+      if (k && !(k in map)){ map[k] = r[field]; order.push(k); }
+    });
+    return order.map(function(k){ return {key:k, label:map[k]}; });
+  }
+  function missionKey(r){ return r.id ? normalizeKey(r.id) : (normalizeKey(r.souscategorie) + "|" + normalizeKey(r.titre)); }
+  function parseIncompatibles(val){
+    return (val||"").toString().split("/").map(function(v){ return normalizeKey(v); }).filter(Boolean);
+  }
+  function isTruthy(v){
+    v = (v||"").toString().trim().toLowerCase();
+    return v === "oui" || v === "yes" || v === "true" || v === "1" || v === "x";
+  }
+  function parseCartesOptions(val){
+    return (val||"").toString().split("/")
+      .map(function(v){ return parseInt(v.trim(), 10); })
+      .filter(function(n){ return !isNaN(n) && n > 0; });
+  }
+
+  // ---- Sources registry (localStorage) -----------------------------------
+
+  function verifierExpiration7Jours(){
+    var SEPT_JOURS_MS = 7 * 24 * 60 * 60 * 1000;
+    var derniere = parseInt(localStorage.getItem(STORAGE_DERNIERE_OUVERTURE), 10);
+    if (isNaN(derniere) || (Date.now() - derniere) > SEPT_JOURS_MS){
+      localStorage.removeItem(STORAGE_SOUSCATS_UTILISEES);
+      localStorage.removeItem(STORAGE_MISSIONS_VUES);
+    }
+    localStorage.setItem(STORAGE_DERNIERE_OUVERTURE, Date.now());
+  }  
+  
+  function rowsFromParsed(data){
+    var out = [];
+    data.forEach(function(row){
+      var normalized = {};
+      Object.keys(row || {}).forEach(function(k){ normalized[normalizeKey(k)] = (row[k]||"").toString().trim(); });
+      var souscategorie = normalized["souscategorie"] || normalized["sous categorie"] || "";
+      var titre = normalized["titre"] || "";
+      var texte = normalized["texte"] || "";
+      if (souscategorie && titre && texte){
+        out.push({
+          id: normalized["id"] || "",
+          souscategorie: souscategorie,
+          titre: titre,
+          texte: texte,
+          categorie: normalized["categorie"] || "",
+          image: normalized["image"] || "",
+          top_rattrapage: normalized["top_rattrapage"] || "",
+          top_avance: normalized["top_avance"] || "",
+          top_retard: normalized["top_retard"] || "",
+          chaos: normalized["chaos"] || "",
+          couleur: normalized["couleur"] || "",
+          garantie_partie: normalized["garantie_partie"] || "",
+          incompatible_con: normalized["incompatible_con"] || "",
+          cartes_3: normalized["cartes_3"] || "",
+          cartes_4: normalized["cartes_4"] || "",
+          cartes_5: normalized["cartes_5"] || "",
+          cartes_6: normalized["cartes_6"] || "",
+          cartes_7: normalized["cartes_7"] || "",
+          cartes_8: normalized["cartes_8"] || ""
+        });
+      }
+    });
+    return out;
+  }
+
+  function fetchCsvAvecCache(cb){
+    Papa.parse(CSV_URL, {
+      download:true, header:true, skipEmptyLines:true,
+      complete:function(results){
+        var rows = rowsFromParsed(results.data || []);
+        if (rows.length){
+          try { localStorage.setItem(STORAGE_CSV_CACHE, JSON.stringify(rows)); } catch(e){}
+          cb(rows);
+        } else {
+          cb(lireCacheCsvOuExemple());
+        }
+      },
+      error:function(){ cb(lireCacheCsvOuExemple()); }
+    });
+  }
+  function lireCacheCsvOuExemple(){
+    try {
+      var raw = localStorage.getItem(STORAGE_CSV_CACHE);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return SAMPLE_ROWS.slice();
+  }  
+
+  // ---- Persisted selection / mémoire de tirage ---------------------------
+  function loadSouscatsUtilisees(){
+    try { return new Set(JSON.parse(localStorage.getItem(STORAGE_SOUSCATS_UTILISEES) || "[]")); }
+    catch(e){ return new Set(); }
+  }
+  function saveSouscatsUtilisees(){
+    try { localStorage.setItem(STORAGE_SOUSCATS_UTILISEES, JSON.stringify(Array.from(souscategoriesUtilisees))); } catch(e){}
+  }
+  function loadMissionsVues(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_MISSIONS_VUES) || "{}"); }
+    catch(e){ return {}; }
+  }
+  function saveMissionsVues(){
+    try { localStorage.setItem(STORAGE_MISSIONS_VUES, JSON.stringify(missionsVues)); } catch(e){}
+  }
+
+  // ---- Bootstrap ----------------------------------------------------------
+  function bootstrap(){
+    verifierExpiration7Jours();
+    missionsEcartees = loadMissionsEcartees();
+    var btn = $("btn-players-play");
+    btn.textContent = "Chargement…";
+    updatePlayButtonState();
+    fetchCsvAvecCache(function(rows){
+      allRows = rows;
+      dataReady = true;
+      btn.textContent = "Commencer la partie";
+      updatePlayButtonState();
+    });
+  }
+
+  // ---- Joueurs ----------------------------------------------------------
+  function goToPlayers(){
+    renderPlayersGrid();
+    updatePlayButtonState();
+    showScreen("players-select");
+  }
+  
+  function updatePlayButtonState(){
+    $("btn-players-play").disabled = !dataReady || playerCount === null;
+  }  
+  
+  function renderPlayersGrid(){
+    var wrap = $("players-grid");
+    wrap.innerHTML = "";
+    PLAYER_COUNTS.forEach(function(n){
+      var opt = document.createElement("button");
+      opt.className = "rv-player-opt"; opt.type = "button";
+      opt.setAttribute("aria-pressed", playerCount === n ? "true" : "false");
+      opt.innerHTML = n + "<span>joueurs</span>";
+      opt.addEventListener("click", function(){
+        playerCount = n;
+        renderPlayersGrid();
+        updatePlayButtonState();
+      });
+      wrap.appendChild(opt);
+    });
+  }
+
+  $("btn-players-play").addEventListener("click", function(){ startPartie(); });
+
+  // ---- Partie / tirage ----------------------------------------------------
+  function startPartie(){
+    souscategoriesUtilisees = loadSouscatsUtilisees();
+    missionsVues = loadMissionsVues();
+    categoriesVues = new Set();
+    manche = 0;
+    resetStageVisual();
+    showScreen("stage");
+    tirerMissionSuivante(true);
+  }
+
+  function resetStageVisual(){
+    $("manche-number").textContent = "—";
+    $("stage-idle").style.display = "flex";
+    $("stage-card").classList.remove("rv-visible");
+    $("stage-empty").classList.remove("rv-visible");
+    $("spotlight").classList.remove("rv-on");
+    $("btn-skip").disabled = true;
+  }
+
+  function buildEligiblePool(){
+    var champ = "cartes_" + playerCount;
+    return allRows.filter(function(r){
+      if (missionsEcartees.has(missionKey(r))) return false;
+      if (!parseCartesOptions(r[champ]).length) return false;
+      var seuil = parseInt(r.top_rattrapage, 10);
+      if (!isNaN(seuil) && manche < seuil) return false;
+      return true;
+    });
+  }
+
+  function tirerMissionSuivante(incrementerManche){
+    if (incrementerManche) manche++;
+    $("manche-number").textContent = manche;
+  
+    var pool = buildEligiblePool();
+    if (!pool.length){ showEmpty(); return; }
+  
+    // Niveau 1 : catégorie
+    var categoriesDansPool = uniqueBy(pool, "categorie").map(function(c){ return c.key; });
+    var categoriesRestantes = categoriesDansPool.filter(function(k){ return !categoriesVues.has(k); });
+    if (!categoriesRestantes.length){
+      categoriesVues = new Set();
+      categoriesRestantes = categoriesDansPool.slice();
+    }
+    var categorieChoisie = categoriesRestantes[Math.floor(Math.random() * categoriesRestantes.length)];
+    categoriesVues.add(categorieChoisie);
+  
+    var poolCategorie = pool.filter(function(r){ return normalizeKey(r.categorie) === categorieChoisie; });
+  
+    // Niveau 2 : sous-catégorie, à l'intérieur de la catégorie choisie
+    var subcatsDansCategorie = uniqueBy(poolCategorie, "souscategorie").map(function(c){ return c.key; });
+    var subcatsRestantes = subcatsDansCategorie.filter(function(k){ return !souscategoriesUtilisees.has(k); });
+    if (!subcatsRestantes.length){
+      subcatsDansCategorie.forEach(function(k){ souscategoriesUtilisees.delete(k); });
+      subcatsRestantes = subcatsDansCategorie.slice();
+    }
+    var subcatChoisie = subcatsRestantes[Math.floor(Math.random() * subcatsRestantes.length)];
+    souscategoriesUtilisees.add(subcatChoisie);
+    saveSouscatsUtilisees();
+  
+    // Niveau 3 : mission, à l'intérieur de la sous-catégorie choisie
+    var missionsSubcat = poolCategorie.filter(function(r){ return normalizeKey(r.souscategorie) === subcatChoisie; });
+    var missionsNonVues = missionsSubcat.filter(function(r){ return !missionsVues[missionKey(r)]; });
+    if (!missionsNonVues.length){
+      missionsSubcat.forEach(function(r){ missionsVues[missionKey(r)] = false; });
+      missionsNonVues = missionsSubcat.slice();
+    }
+    var mission = missionsNonVues[Math.floor(Math.random() * missionsNonVues.length)];
+    missionsVues[missionKey(mission)] = true;
+    saveMissionsVues();
+  
+    afficherMission(mission);
+  }
+
+  function loadMissionsEcartees(){
+    try { return new Set(JSON.parse(localStorage.getItem(STORAGE_MISSIONS_ECARTEES) || "[]")); }
+    catch(e){ return new Set(); }
+  }
+  function saveMissionsEcartees(){
+    try { localStorage.setItem(STORAGE_MISSIONS_ECARTEES, JSON.stringify(Array.from(missionsEcartees))); } catch(e){}
+  }
+
+  function appliquerCouleurMission(couleur){
+    var c = (couleur || "").trim();
+    var couleurFinale = /^#[0-9A-Fa-f]{6}$/.test(c) ? c : "var(--spot)";
+    $("card-titre").style.color = couleurFinale;
+    $("card-cartes").style.background = couleurFinale;
+    $("btn-next-manche").style.background = couleurFinale;
+  }
+  
+  function afficherMission(mission){
+    $("stage-idle").style.display = "none";
+    $("stage-empty").classList.remove("rv-visible");
+
+    $("card-categorie").textContent = mission.categorie;
+    $("card-titre").textContent = mission.titre;
+    $("card-texte").innerHTML = sanitizeCardText(mission.texte);
+    appliquerCouleurMission(mission.couleur);
+
+    var options = parseCartesOptions(mission["cartes_" + playerCount]);
+    var n = options[Math.floor(Math.random() * options.length)];
+    $("card-cartes").innerHTML = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
+
+    $("stage-card").classList.add("rv-visible");
+    $("spotlight").classList.add("rv-on");
+    $("btn-skip").disabled = false;
+
+    requestAnimationFrame(ajusterMission);
+  }
+
+  function showEmpty(){
+    $("stage-idle").style.display = "none";
+    $("stage-card").classList.remove("rv-visible");
+    $("stage-empty").classList.add("rv-visible");
+    $("spotlight").classList.remove("rv-on");
+    $("btn-skip").disabled = true;
+    $("btn-next-manche").style.background = "";
+  }
+
+  function ajusterTailleUnique(el, tailleMax, tailleMin){
+    var taille = tailleMax;
+    el.style.fontSize = taille + "px";
+    var garde = 0;
+    while (el.scrollHeight > el.clientHeight && taille > tailleMin && garde < 60){
+      taille -= 1;
+      el.style.fontSize = taille + "px";
+      garde++;
+    }
+  }
+
+  function ajusterMission(){
+    var card = $("stage-card");
+    var titreEl = $("card-titre");
+    var texteEl = $("card-texte");
+    var categorieEl = $("card-categorie");
+    var cartesEl = $("card-cartes");
+
+    var totalH = card.clientHeight;
+    var reserve = categorieEl.offsetHeight + cartesEl.offsetHeight + 48; // gaps
+    var dispoH = Math.max(totalH - reserve, 80);
+    var titreH = Math.round(dispoH * 0.3);
+    var texteH = dispoH - titreH;
+
+    titreEl.style.height = titreH + "px";
+    texteEl.style.height = texteH + "px";
+
+    ajusterTailleUnique(titreEl, 28, 15);
+    ajusterTailleUnique(texteEl, 24, 14);
+  }
+
+  window.addEventListener("resize", function(){
+    if ($("stage-card").classList.contains("rv-visible")) ajusterMission();
+  });
+
+  $("btn-next-manche").addEventListener("click", function(){ tirerMissionSuivante(true); });
+  $("btn-skip").addEventListener("click", function(){ tirerMissionSuivante(false); });
+  $("btn-new-game").addEventListener("click", function(){
+    playerCount = null;
+    manche = 0;
+    resetStageVisual();
+    goToPlayers();
+  });
+
+  // ---- Settings ---------------------------------------------------------
+
+  renderPlayersGrid();
+  showScreen("players-select");
+  bootstrap();
+})();
+</script>
+</body>
+</html>
