@@ -667,7 +667,7 @@
     el.style.fontSize = taille + "px";
     var garde = 0;
     while (el.scrollHeight > el.clientHeight && taille > tailleMin && garde < 60){
-      taille -= 1;
+      taille -= 0.5;
       el.style.fontSize = taille + "px";
       garde++;
     }
