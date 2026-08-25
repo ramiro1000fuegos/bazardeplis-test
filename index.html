@@ -165,13 +165,30 @@
     display:flex; flex-direction:column; align-items:center; gap:10px;
     color:var(--text-muted); text-align:center;
   }
-
+  
   .rv-card{
-    display:none; flex-direction:column; align-items:center;
+    display:none; position:relative; overflow:hidden;
     width:100%; max-width:560px; height:100%;
-    gap:16px;
   }
   .rv-card.rv-visible{display:flex;}
+  
+  .rv-card-track{
+    display:flex; width:200%; height:100%;
+    transition:transform .3s ease;
+    touch-action:pan-y;
+  }
+  .rv-card-face{
+    width:50%; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:center;
+    gap:16px; padding:0 6px;
+  }
+  .rv-swipe-hint{
+    position:absolute; top:50%; transform:translateY(-50%);
+    font-size:28px; color:var(--text-muted); opacity:.5;
+    pointer-events:none; display:none;
+  }
+  .rv-swipe-hint-right{ right:2px; }
+  .rv-swipe-hint-left{ left:2px; }
 
   .rv-mission-categorie{
     font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);
@@ -243,7 +260,10 @@
       </div>
       <div class="rv-footer-actions">
         <a class="rv-btn-reset" id="btn-regles" href="https://docs.google.com/document/d/1kye2mTZ__FhK8NN0V3IhhFVqy8vcjaCx-MYYKIAw90Y/edit?usp=sharing&pli=1&authuser=0" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Voir les règles du jeu</a>
-        <button class="rv-btn rv-btn-primary" id="btn-players-play" disabled>Commencer la partie</button>
+        <div class="rv-btn-row">
+          <button class="rv-btn rv-btn-primary" id="btn-players-play" disabled>Commencer la partie</button>
+          <button class="rv-btn rv-btn-ghost" id="btn-players-play-variante" disabled>Variante : 2 règles extra</button>
+        </div>
       </div>
     </div>
   </section>
@@ -265,10 +285,22 @@
       </div>
 
       <div class="rv-card" id="stage-card">
-        <span class="rv-mission-categorie" id="card-categorie"></span>
-        <div class="rv-mission-titre" id="card-titre"></div>
-        <span class="rv-mission-cartes" id="card-cartes"></span>
-        <div class="rv-mission-texte" id="card-texte"></div>
+        <div class="rv-card-track" id="card-track">
+          <div class="rv-card-face" id="card-face-1">
+            <span class="rv-mission-categorie" id="card-categorie"></span>
+            <div class="rv-mission-titre" id="card-titre"></div>
+            <span class="rv-mission-cartes" id="card-cartes"></span>
+            <div class="rv-mission-texte" id="card-texte"></div>
+          </div>
+          <div class="rv-card-face" id="card-face-2">
+            <span class="rv-mission-categorie" id="card-categorie-2"></span>
+            <div class="rv-mission-titre" id="card-titre-2"></div>
+            <span class="rv-mission-cartes" id="card-cartes-2"></span>
+            <div class="rv-mission-texte" id="card-texte-2"></div>
+          </div>
+        </div>
+        <span class="rv-swipe-hint rv-swipe-hint-right" id="swipe-hint-right" aria-hidden="true">›</span>
+        <span class="rv-swipe-hint rv-swipe-hint-left" id="swipe-hint-left" aria-hidden="true">‹</span>
       </div>
 
       <div class="rv-empty-hint" id="stage-empty">
@@ -345,6 +377,8 @@
   var playerCount = null;
   var manche = 0;
   var dataReady = false;
+  var varianteDeuxRegles = false;      // ← ajout : mode 2 missions actif ou non
+  var missionCourante2 = null;         // ← ajout : 2e mission du couple affiché, ou null
 
   var $ = function(id){ return document.getElementById(id); };
   var screens = ["players-select","stage"];
@@ -401,17 +435,13 @@
         out.push({
           id: normalized["id"] || "",
           souscategorie: souscategorie,
+          categorie: normalized["categorie"] || "",
           titre: titre,
           texte: texte,
-          categorie: normalized["categorie"] || "",
           image: normalized["image"] || "",
           top_rattrapage: normalized["top_rattrapage"] || "",
-          top_avance: normalized["top_avance"] || "",
-          top_retard: normalized["top_retard"] || "",
-          chaos: normalized["chaos"] || "",
           couleur: normalized["couleur"] || "",
-          garantie_partie: normalized["garantie_partie"] || "",
-          incompatible_con: normalized["incompatible_con"] || "",
+          incompatibilites: normalized["incompatibilites"] || "",   
           cartes_3: normalized["cartes_3"] || "",
           cartes_4: normalized["cartes_4"] || "",
           cartes_5: normalized["cartes_5"] || "",
@@ -480,14 +510,17 @@
 
   // ---- Joueurs ----------------------------------------------------------
   function goToPlayers(){
+    varianteDeuxRegles = false;   // ← ajout
     renderPlayersGrid();
     updatePlayButtonState();
     showScreen("players-select");
   }
   
   function updatePlayButtonState(){
-    $("btn-players-play").disabled = !dataReady || playerCount === null;
-  }  
+    var actif = dataReady && playerCount !== null;
+    $("btn-players-play").disabled = !actif;
+    $("btn-players-play-variante").disabled = !actif;
+  }
   
   function renderPlayersGrid(){
     var wrap = $("players-grid");
@@ -506,7 +539,14 @@
     });
   }
 
-  $("btn-players-play").addEventListener("click", function(){ startPartie(); });
+  $("btn-players-play").addEventListener("click", function(){
+    varianteDeuxRegles = false;
+    startPartie();
+  });
+  $("btn-players-play-variante").addEventListener("click", function(){
+    varianteDeuxRegles = true;
+    startPartie();
+  });
 
   // ---- Partie / tirage ----------------------------------------------------
   function startPartie(){
@@ -539,12 +579,8 @@
     });
   }
 
-  function tirerMissionSuivante(incrementerManche){
-    if (incrementerManche) manche++;
-    $("manche-number").textContent = manche;
-  
-    var pool = buildEligiblePool();
-    if (!pool.length){ showEmpty(); return; }
+  function piocherUneMission(pool){
+    if (!pool.length) return null;
   
     // Niveau 1 : catégorie
     var categoriesDansPool = uniqueBy(pool, "categorie").map(function(c){ return c.key; });
@@ -558,7 +594,7 @@
   
     var poolCategorie = pool.filter(function(r){ return normalizeKey(r.categorie) === categorieChoisie; });
   
-    // Niveau 2 : sous-catégorie, à l'intérieur de la catégorie choisie
+    // Niveau 2 : sous-catégorie
     var subcatsDansCategorie = uniqueBy(poolCategorie, "souscategorie").map(function(c){ return c.key; });
     var subcatsRestantes = subcatsDansCategorie.filter(function(k){ return !souscategoriesUtilisees.has(k); });
     if (!subcatsRestantes.length){
@@ -569,7 +605,7 @@
     souscategoriesUtilisees.add(subcatChoisie);
     saveSouscatsUtilisees();
   
-    // Niveau 3 : mission, à l'intérieur de la sous-catégorie choisie
+    // Niveau 3 : mission
     var missionsSubcat = poolCategorie.filter(function(r){ return normalizeKey(r.souscategorie) === subcatChoisie; });
     var missionsNonVues = missionsSubcat.filter(function(r){ return !missionsVues[missionKey(r)]; });
     if (!missionsNonVues.length){
@@ -580,9 +616,33 @@
     missionsVues[missionKey(mission)] = true;
     saveMissionsVues();
   
-    afficherMission(mission);
+    return mission;
   }
-
+  
+  function tirerDeuxiemeMission(pool, mission1){
+    var exclus = parseIncompatibles(mission1.incompatibilites);
+    var poolCompatible = pool.filter(function(r){
+      var k = missionKey(r);
+      return k !== missionKey(mission1) && exclus.indexOf(k) === -1;
+    });
+    if (!poolCompatible.length) return null; // filet de sécurité, voir note plus bas
+    return piocherUneMission(poolCompatible);
+  }
+  
+  function tirerMissionSuivante(incrementerManche){
+    if (incrementerManche) manche++;
+    $("manche-number").textContent = manche;
+  
+    var pool = buildEligiblePool();
+    if (!pool.length){ showEmpty(); return; }
+  
+    var mission1 = piocherUneMission(pool);
+    var mission2 = varianteDeuxRegles ? tirerDeuxiemeMission(pool, mission1) : null;
+  
+    missionCourante2 = mission2;
+    afficherMission(mission1, mission2);
+  }
+  
   function loadMissionsEcartees(){
     try { return new Set(JSON.parse(localStorage.getItem(STORAGE_MISSIONS_ECARTEES) || "[]")); }
     catch(e){ return new Set(); }
@@ -599,25 +659,19 @@
     $("btn-next-manche").style.background = couleurFinale;
   }
   
-  function afficherMission(mission){
-    $("stage-idle").style.display = "none";
-    $("stage-empty").classList.remove("rv-visible");
-
-    $("card-categorie").textContent = mission.categorie;
-    $("card-titre").textContent = mission.titre;
-    $("card-texte").innerHTML = sanitizeCardText(mission.texte);
-    appliquerCouleurMission(mission.couleur);
-
-    var options = parseCartesOptions(mission["cartes_" + playerCount]);
-    var n = options[Math.floor(Math.random() * options.length)];
-    $("card-cartes").innerHTML = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
-
-    $("stage-card").classList.add("rv-visible");
-    $("spotlight").classList.add("rv-on");
-    $("btn-skip").disabled = false;
-
-    requestAnimationFrame(ajusterMission);
+  function choisirNombreCartes(mission1, mission2){
+    var champ = "cartes_" + playerCount;
+    var opts1 = parseCartesOptions(mission1[champ]);
+    if (!mission2) return opts1[Math.floor(Math.random() * opts1.length)];
+  
+    var opts2 = parseCartesOptions(mission2[champ]);
+    if (opts1.length === 1 && opts2.length === 1) return Math.min(opts1[0], opts2[0]);
+    if (opts1.length === 1) return opts1[0];
+    if (opts2.length === 1) return opts2[0];
+    return opts1[Math.floor(Math.random() * opts1.length)];
   }
+  
+
 
   function showEmpty(){
     $("stage-idle").style.display = "none";
@@ -638,30 +692,110 @@
       garde++;
     }
   }
+  
+  function remplirFace(suffix, mission){
+    $("card-categorie" + suffix).textContent = mission.categorie;
+    $("card-titre" + suffix).textContent = mission.titre;
+    $("card-texte" + suffix).innerHTML = sanitizeCardText(mission.texte);
+  }
+  
+  function afficherMission(mission1, mission2){
+    $("stage-idle").style.display = "none";
+    $("stage-empty").classList.remove("rv-visible");
+  
+    remplirFace("", mission1);
+    appliquerCouleurMission(mission1.couleur);
+  
+    var n = choisirNombreCartes(mission1, mission2);
+    var htmlCartes = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
+    $("card-cartes").innerHTML = htmlCartes;
+  
+    if (mission2){
+      remplirFace("-2", mission2);
+      $("card-cartes-2").innerHTML = htmlCartes;
+    }
+  
+    resetCardTrack();
+  
+    $("stage-card").classList.add("rv-visible");
+    $("spotlight").classList.add("rv-on");
+    $("btn-skip").disabled = false;
+  
+    requestAnimationFrame(function(){
+      ajusterMission("", "card-face-1");
+      if (mission2) ajusterMission("-2", "card-face-2");
+    });
+  }
 
-  function ajusterMission(){
-    var card = $("stage-card");
-    var titreEl = $("card-titre");
-    var texteEl = $("card-texte");
-    var categorieEl = $("card-categorie");
-    var cartesEl = $("card-cartes");
-
-    var totalH = card.clientHeight;
-    var reserve = categorieEl.offsetHeight + cartesEl.offsetHeight + 48; // gaps
+  function updateSwipeHints(){
+    var face = $("card-track").dataset.face;
+    $("swipe-hint-right").style.display = (missionCourante2 && face === "1") ? "block" : "none";
+    $("swipe-hint-left").style.display = (missionCourante2 && face === "2") ? "block" : "none";
+  }
+  
+  function resetCardTrack(){
+    var track = $("card-track");
+    track.style.transform = "translateX(0%)";
+    track.dataset.face = "1";
+    updateSwipeHints();
+  }
+  
+  function allerFace2(){
+    if (!missionCourante2) return;
+    var track = $("card-track");
+    track.style.transform = "translateX(-50%)";
+    track.dataset.face = "2";
+    updateSwipeHints();
+  }
+  
+  function allerFace1(){
+    var track = $("card-track");
+    track.style.transform = "translateX(0%)";
+    track.dataset.face = "1";
+    updateSwipeHints();
+  }
+  
+  (function initSwipe(){
+    var track = $("card-track");
+    var startX = null;
+    track.addEventListener("touchstart", function(e){
+      startX = e.touches[0].clientX;
+    }, {passive:true});
+    track.addEventListener("touchend", function(e){
+      if (startX === null) return;
+      var deltaX = e.changedTouches[0].clientX - startX;
+      startX = null;
+      if (Math.abs(deltaX) < 40) return; // seuil anti faux-positif
+      if (deltaX < 0) allerFace2(); else allerFace1();
+    }, {passive:true});
+  })();
+  
+  function ajusterMission(elSuffix, faceId){
+    var face = $(faceId);
+    var titreEl = $("card-titre" + elSuffix);
+    var texteEl = $("card-texte" + elSuffix);
+    var categorieEl = $("card-categorie" + elSuffix);
+    var cartesEl = $("card-cartes" + elSuffix);
+  
+    var totalH = face.clientHeight;
+    var reserve = categorieEl.offsetHeight + cartesEl.offsetHeight + 48;
     var dispoH = Math.max(totalH - reserve, 80);
     var titreH = Math.round(dispoH * 0.3);
     var texteH = dispoH - titreH;
-
+  
     titreEl.style.height = titreH + "px";
     texteEl.style.height = texteH + "px";
-
+  
     ajusterTailleUnique(titreEl, 28, 15);
     ajusterTailleUnique(texteEl, 24, 14);
   }
 
-  window.addEventListener("resize", function(){
-    if ($("stage-card").classList.contains("rv-visible")) ajusterMission();
-  });
+window.addEventListener("resize", function(){
+  if ($("stage-card").classList.contains("rv-visible")){
+    ajusterMission("", "card-face-1");
+    if (missionCourante2) ajusterMission("-2", "card-face-2");
+  }
+});
 
   $("btn-next-manche").addEventListener("click", function(){ tirerMissionSuivante(true); });
   $("btn-skip").addEventListener("click", function(){ tirerMissionSuivante(false); });
