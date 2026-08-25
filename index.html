@@ -172,6 +172,9 @@
     gap:16px;
   }
   .rv-card.rv-visible{display:flex;}
+  .rv-card-symbole-rouge{
+    color:var(--rv-red);
+  }  
 
   .rv-mission-categorie{
     font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);
@@ -183,7 +186,6 @@
     line-height:1.18; width:100%; overflow:hidden; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
   }
-
   .rv-mission-texte{
     font-family:var(--font-ui); font-weight:500; text-align:center; line-height:1.42;
     width:100%; flex:1; min-height:0; overflow:hidden;
@@ -327,15 +329,11 @@
   var PURIFY_CONFIG = { ALLOWED_TAGS: ["br","b","strong","span"], ALLOWED_ATTR: ["color"] };
   function sanitizeCardText(raw){
     var clean = DOMPurify.sanitize(raw || "", PURIFY_CONFIG);
-    clean = clean
+    return clean
       .replace(/<span color="rouge">/g, '<span style="color:var(--rv-red)">')
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
-      .replace(/♥/g, '<span style="color:var(--rv-red)">♥</span>')
-      .replace(/♦/g, '<span style="color:var(--rv-red)">♦</span>');
-  
-    clean = '<div>' + clean.replace(/<br\s*\/?>/gi, '</div><div>') + '</div>';
-  
-    return clean;    
+      .replace(/♥/g, '<span class="rv-card-symbole-rouge">♥</span>')
+      .replace(/♦/g, '<span class="rv-card-symbole-rouge">♦</span>');
   }
 
   // ---- State ------------------------------------------------------------
