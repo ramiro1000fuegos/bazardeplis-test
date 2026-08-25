@@ -183,16 +183,24 @@
     line-height:1.18; width:100%; overflow:hidden; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
   }
+
   .rv-mission-texte{
-    font-family:var(--font-ui); font-weight:500; text-align:center; line-height:1.42;
-    width:100%; flex:1; min-height:0; overflow:hidden;
-    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-ui); 
+    font-weight:500; 
+    text-align:center; 
+    line-height:1.42;
+    width:100%; 
+    flex:1; 
+    min-height:0; 
+    overflow:hidden;
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
   }
+  
   .rv-mission-texte br{
-    content:"";
-    display:block;
-    margin-bottom:0.7em;
-  }
+    line-height:2.2;
+  }  
   .rv-mission-texte b, .rv-mission-texte strong{font-weight:800;}
   .rv-mission-cartes{
     font-family:var(--font-display); font-weight:700; font-size:17px;
@@ -336,9 +344,8 @@
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
       .replace(/♥/g, '<span style="color:var(--rv-red)">♥</span>')
       .replace(/♦/g, '<span style="color:var(--rv-red)">♦</span>');
-
-    clean = '<div>' + clean.replace(/<br\s*\/?>/gi, '</div><div>') + '</div>';
-    return clean;
+  
+    return '<div style="width:100%;">' + clean + '</div>';
   }
 
   // ---- State ------------------------------------------------------------
