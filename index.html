@@ -14,6 +14,7 @@
     --bg: #15121B;
     --bg-raised: #1E1A26;
     --spot: #E8A33D;
+    --slate: #9AA5B4;
     --spot-dim: #7A5A26;
     --text: #F4EEE3;
     --text-muted: #948C9E;
@@ -167,29 +168,16 @@
   }
   
   .rv-card{
-    display:none; position:relative; overflow:hidden;
+    display:none; flex-direction:column; align-items:center;
     width:100%; max-width:560px; height:100%;
+    gap:14px;
   }
   .rv-card.rv-visible{display:flex;}
   
-  .rv-card-track{
-    display:flex; width:200%; height:100%;
-    transition:transform .3s ease;
-    touch-action:pan-y;
-  }
-  .rv-card-face{
-    width:50%; flex-shrink:0;
+  .rv-mission-bloc{
     display:flex; flex-direction:column; align-items:center;
-    gap:16px; padding:0 6px;
+    width:100%; gap:6px; min-height:0; flex:1;
   }
-  .rv-swipe-hint{
-    position:absolute; top:50%; transform:translateY(-50%);
-    font-size:28px; color:var(--text-muted); opacity:.5;
-    pointer-events:none; display:none;
-  }
-  .rv-swipe-hint-right{ right:2px; }
-  .rv-swipe-hint-left{ left:2px; }
-
   .rv-mission-categorie{
     font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);
     background:rgba(78,158,151,.12); border:1px solid rgba(78,158,151,.35);
@@ -208,7 +196,7 @@
   .rv-mission-texte b, .rv-mission-texte strong{font-weight:800;}
   .rv-mission-cartes{
     font-family:var(--font-display); font-weight:700; font-size:17px;
-    color:#1B140A; background:var(--spot);
+    color:#1B140A; background:var(--slate);
     border-radius:999px; padding:10px 22px; flex-shrink:0;
   }
   .rv-cartes-nombre{
@@ -230,7 +218,7 @@
   }
   .rv-btn-row{ display:flex; gap:10px; width:100%; max-width:460px; }
   .rv-btn-row .rv-btn{ flex:1; }
-  #btn-next-manche{ flex:1.4; }
+  #btn-next-manche{ flex:1.4; background:var(--slate) !important;}
 
   /* ---------- settings ---------- */
   .rv-inline-msg{ font-size:13px; border-radius:8px; padding:9px 12px; margin-top:10px; display:none; }
@@ -285,22 +273,15 @@
       </div>
 
       <div class="rv-card" id="stage-card">
-        <div class="rv-card-track" id="card-track">
-          <div class="rv-card-face" id="card-face-1">
-            <span class="rv-mission-categorie" id="card-categorie"></span>
-            <div class="rv-mission-titre" id="card-titre"></div>
-            <span class="rv-mission-cartes" id="card-cartes"></span>
-            <div class="rv-mission-texte" id="card-texte"></div>
-          </div>
-          <div class="rv-card-face" id="card-face-2">
-            <span class="rv-mission-categorie" id="card-categorie-2"></span>
-            <div class="rv-mission-titre" id="card-titre-2"></div>
-            <span class="rv-mission-cartes" id="card-cartes-2"></span>
-            <div class="rv-mission-texte" id="card-texte-2"></div>
-          </div>
+        <span class="rv-mission-cartes" id="card-cartes"></span>
+        <div class="rv-mission-bloc" id="mission-bloc-1">
+          <div class="rv-mission-titre" id="card-titre"></div>
+          <div class="rv-mission-texte" id="card-texte"></div>
         </div>
-        <span class="rv-swipe-hint rv-swipe-hint-right" id="swipe-hint-right" aria-hidden="true">›</span>
-        <span class="rv-swipe-hint rv-swipe-hint-left" id="swipe-hint-left" aria-hidden="true">‹</span>
+        <div class="rv-mission-bloc" id="mission-bloc-2" hidden>
+          <div class="rv-mission-titre" id="card-titre-2"></div>
+          <div class="rv-mission-texte" id="card-texte-2"></div>
+        </div>
       </div>
 
       <div class="rv-empty-hint" id="stage-empty">
@@ -655,8 +636,8 @@
     var c = (couleur || "").trim();
     var couleurFinale = /^#[0-9A-Fa-f]{6}$/.test(c) ? c : "var(--spot)";
     $("card-titre").style.color = couleurFinale;
-    $("card-cartes").style.background = couleurFinale;
-    $("btn-next-manche").style.background = couleurFinale;
+    // $("card-cartes").style.background = couleurFinale;
+    // $("btn-next-manche").style.background = couleurFinale;
   }
   
   function choisirNombreCartes(mission1, mission2){
@@ -694,108 +675,67 @@
   }
   
   function remplirFace(suffix, mission){
-    $("card-categorie" + suffix).textContent = mission.categorie;
     $("card-titre" + suffix).textContent = mission.titre;
     $("card-texte" + suffix).innerHTML = sanitizeCardText(mission.texte);
+    appliquerCouleurMission(mission.couleur, suffix);
   }
   
   function afficherMission(mission1, mission2){
     $("stage-idle").style.display = "none";
     $("stage-empty").classList.remove("rv-visible");
   
-    remplirFace("", mission1);
-    appliquerCouleurMission(mission1.couleur);
-  
     var n = choisirNombreCartes(mission1, mission2);
-    var htmlCartes = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
-    $("card-cartes").innerHTML = htmlCartes;
+    $("card-cartes").innerHTML = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
+  
+    remplirFace("", mission1);
   
     if (mission2){
+      $("mission-bloc-2").hidden = false;
       remplirFace("-2", mission2);
-      $("card-cartes-2").innerHTML = htmlCartes;
+    } else {
+      $("mission-bloc-2").hidden = true;
     }
-  
-    resetCardTrack();
   
     $("stage-card").classList.add("rv-visible");
     $("spotlight").classList.add("rv-on");
     $("btn-skip").disabled = false;
   
-    requestAnimationFrame(function(){
-      ajusterMission("", "card-face-1");
-      if (mission2) ajusterMission("-2", "card-face-2");
-    });
+    requestAnimationFrame(ajusterBlocsMissions);
   }
 
-  function updateSwipeHints(){
-    var face = $("card-track").dataset.face;
-    $("swipe-hint-right").style.display = (missionCourante2 && face === "1") ? "block" : "none";
-    $("swipe-hint-left").style.display = (missionCourante2 && face === "2") ? "block" : "none";
-  }
-  
-  function resetCardTrack(){
-    var track = $("card-track");
-    track.style.transform = "translateX(0%)";
-    track.dataset.face = "1";
-    updateSwipeHints();
-  }
-  
-  function allerFace2(){
-    if (!missionCourante2) return;
-    var track = $("card-track");
-    track.style.transform = "translateX(-50%)";
-    track.dataset.face = "2";
-    updateSwipeHints();
-  }
-  
-  function allerFace1(){
-    var track = $("card-track");
-    track.style.transform = "translateX(0%)";
-    track.dataset.face = "1";
-    updateSwipeHints();
-  }
-  
-  (function initSwipe(){
-    var track = $("card-track");
-    var startX = null;
-    track.addEventListener("touchstart", function(e){
-      startX = e.touches[0].clientX;
-    }, {passive:true});
-    track.addEventListener("touchend", function(e){
-      if (startX === null) return;
-      var deltaX = e.changedTouches[0].clientX - startX;
-      startX = null;
-      if (Math.abs(deltaX) < 40) return; // seuil anti faux-positif
-      if (deltaX < 0) allerFace2(); else allerFace1();
-    }, {passive:true});
-  })();
-  
-  function ajusterMission(elSuffix, faceId){
-    var face = $(faceId);
-    var titreEl = $("card-titre" + elSuffix);
-    var texteEl = $("card-texte" + elSuffix);
-    var categorieEl = $("card-categorie" + elSuffix);
-    var cartesEl = $("card-cartes" + elSuffix);
-  
-    var totalH = face.clientHeight;
-    var reserve = categorieEl.offsetHeight + cartesEl.offsetHeight + 48;
-    var dispoH = Math.max(totalH - reserve, 80);
-    var titreH = Math.round(dispoH * 0.3);
-    var texteH = dispoH - titreH;
-  
+  function ajusterUnBloc(suffix, hDispo, titreMax, titreMin, texteMax, texteMin){
+    var titreEl = $("card-titre" + suffix);
+    var texteEl = $("card-texte" + suffix);
+    var titreH = Math.round(hDispo * 0.3);
+    var texteH = hDispo - titreH;
     titreEl.style.height = titreH + "px";
     texteEl.style.height = texteH + "px";
+    ajusterTailleUnique(titreEl, titreMax, titreMin);
+    ajusterTailleUnique(texteEl, texteMax, texteMin);
+  }
   
-    ajusterTailleUnique(titreEl, 28, 15);
-    ajusterTailleUnique(texteEl, 24, 14);
-  }
+  function ajusterBlocsMissions(){
+    var card = $("stage-card");
+    var cartesEl = $("card-cartes");
+    var bloc2Visible = !$("mission-bloc-2").hidden;
+  
+    var totalH = card.clientHeight;
+    var reserve = cartesEl.offsetHeight + 14; // gap sous la pastille
+    var dispoH = Math.max(totalH - reserve, 80);
+  
+    var gapEntreBlocs = bloc2Visible ? 14 : 0;
+    var hParBloc = bloc2Visible ? (dispoH - gapEntreBlocs) / 2 : dispoH;
+  
+    var titreMax = bloc2Visible ? 20 : 28;
+    var texteMax = bloc2Visible ? 16 : 24;
+  
+    ajusterUnBloc("", hParBloc, titreMax, 12, texteMax, 11);
+    if (bloc2Visible) ajusterUnBloc("-2", hParBloc, titreMax, 12, texteMax, 11);
+  }  
 
-window.addEventListener("resize", function(){
-  if ($("stage-card").classList.contains("rv-visible")){
-    ajusterMission("", "card-face-1");
-    if (missionCourante2) ajusterMission("-2", "card-face-2");
-  }
-});
+  window.addEventListener("resize", function(){
+    if ($("stage-card").classList.contains("rv-visible")) ajusterBlocsMissions();
+  });
 
   $("btn-next-manche").addEventListener("click", function(){ tirerMissionSuivante(true); });
   $("btn-skip").addEventListener("click", function(){ tirerMissionSuivante(false); });
