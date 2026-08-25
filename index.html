@@ -674,6 +674,7 @@
       el.style.fontSize = taille + "px";
       garde++;
     }
+    return taille;    
   }
   
   function remplirFace(suffix, mission){
@@ -710,10 +711,9 @@
     var titreEl = $("card-titre" + suffix);
     var texteEl = $("card-texte" + suffix);
     titreEl.style.height = "";
-    ajusterTailleUnique(titreEl, titreMax, titreMin);
-    var texteH = Math.max(hDispo - titreEl.offsetHeight - 12, 20);
-    texteEl.style.height = texteH + "px";
-    ajusterTailleUnique(texteEl, texteMax, texteMin);
+    var titreTaille = ajusterTailleUnique(titreEl, titreMax, titreMin);
+    var texteTaille = ajusterTailleUnique(texteEl, texteMax, texteMin);
+    return { titre: titreTaille, texte: texteTaille };
   }
     
   function ajusterBlocsMissions(){
@@ -731,8 +731,16 @@
     var titreMax = bloc2Visible ? 26 : 36;
     var texteMax = bloc2Visible ? 20 : 30;
   
-    ajusterUnBloc("", hParBloc, titreMax, 12, texteMax, 11);
-    if (bloc2Visible) ajusterUnBloc("-2", hParBloc, titreMax, 12, texteMax, 11);
+    var res1 = ajusterUnBloc("", hParBloc, titreMax, 12, texteMax, 11);
+    if (bloc2Visible){
+      var res2 = ajusterUnBloc("-2", hParBloc, titreMax, 12, texteMax, 11);
+      var titreCommun = Math.min(res1.titre, res2.titre);
+      var texteCommun = Math.min(res1.texte, res2.texte);
+      $("card-titre").style.fontSize = titreCommun + "px";
+      $("card-titre-2").style.fontSize = titreCommun + "px";
+      $("card-texte").style.fontSize = texteCommun + "px";
+      $("card-texte-2").style.fontSize = texteCommun + "px";
+    }
   }  
 
   window.addEventListener("resize", function(){
