@@ -340,8 +340,11 @@
     }
   });
   var PURIFY_CONFIG = { ALLOWED_TAGS: ["br","b","strong","span"], ALLOWED_ATTR: ["color"] };
-  function sanitizeCardText(raw){
+  function sanitizeCardText(raw, compact){
     var clean = DOMPurify.sanitize(raw || "", PURIFY_CONFIG);
+    if (compact){
+      clean = clean.replace(/<br\s*\/?>/gi, " ");
+    }
     clean = clean
       .replace(/<span color="rouge">/g, '<span style="color:var(--rv-red)">')
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
@@ -665,9 +668,9 @@
   }
 
   
-  function remplirFace(suffix, mission){
+  function remplirFace(suffix, mission, compact){
     $("card-titre" + suffix).textContent = mission.titre;
-    $("card-texte" + suffix).innerHTML = sanitizeCardText(mission.texte);
+    $("card-texte" + suffix).innerHTML = sanitizeCardText(mission.texte, compact);
     var blocId = suffix === "" ? "mission-bloc-1" : "mission-bloc-2";
     appliquerCouleurMission(mission.couleur, suffix, blocId);
   }
@@ -678,12 +681,13 @@
   
     var n = choisirNombreCartes(mission1, mission2);
     $("card-cartes").innerHTML = "<span class=\"rv-cartes-nombre\">" + n + "</span> " + (n > 1 ? "cartes" : "carte");
-  
-    remplirFace("", mission1);
+
+    var compact = !!mission2;
+    remplirFace("", mission1, compact);
   
     if (mission2){
       $("mission-bloc-2").hidden = false;
-      remplirFace("-2", mission2);
+      remplirFace("-2", mission2, compact);
     } else {
       $("mission-bloc-2").hidden = true;
     }
