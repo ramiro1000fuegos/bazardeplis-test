@@ -342,9 +342,11 @@
   var PURIFY_CONFIG = { ALLOWED_TAGS: ["br","b","strong","span"], ALLOWED_ATTR: ["color"] };
   function sanitizeCardText(raw, compact){
     var clean = DOMPurify.sanitize(raw || "", PURIFY_CONFIG);
+    console.log("compact:", compact, "avant:", clean);
     if (compact){
       clean = clean.replace(/<br\s*\/?>/gi, " ");
     }
+    console.log("après:", clean);
     clean = clean
       .replace(/<span color="rouge">/g, '<span style="color:var(--rv-red)">')
       .replace(/<span color="vert">/g, '<span style="color:var(--rv-green)">')
